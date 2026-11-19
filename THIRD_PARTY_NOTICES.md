@@ -1,10 +1,10 @@
-# Third-party notices
+# Сторонние компоненты
 
-Bebra Control's application code is released under Apache-2.0. It uses:
+Код Bebra Control распространяется по Apache-2.0. В проекте используются:
 
-- **Electron**, MIT, and its bundled Chromium/Node.js components under their respective licenses. Packaged desktop releases retain Electron's supplied LICENSE and LICENSES.chromium.html files.
-- **ws**, MIT. Its license is included in the installed package and packaged application's dependencies.
-- **@electron/packager**, MIT, as a development/build dependency.
-- Existing **Pterodactyl/Laravel** installation APIs/services for the optional integration. The panel is installed separately and keeps its own license and notices.
+- **Electron**, MIT, и встроенные компоненты Chromium/Node.js под собственными лицензиями. Архив приложения сохраняет файлы LICENSE и LICENSES.chromium.html из Electron.
+- **ws**, MIT. Лицензия входит в установленный пакет и зависимости собранного приложения.
+- **@electron/packager**, MIT, для разработки и сборки.
+- API и службы отдельно установленного **Pterodactyl/Laravel** для интеграции. Панель сохраняет собственную лицензию и уведомления.
 
-Docker runtimes use official Node.js/Debian bases and standard distribution packages under their respective licenses. No Minecraft server JAR, Pumpkin executable, game world, paid plugin, bot credential, private configuration or third-party launcher source is distributed by this project. The visual interface is original application code; no Nitrolaunch application source or branding assets are included.
+Docker-окружения используют официальные образы Node.js/Debian и стандартные пакеты дистрибутива под соответствующими лицензиями. Проект не распространяет ядра Minecraft JAR, исполняемые файлы Pumpkin, игровые миры, платные плагины, ключи ботов, приватные конфигурации или исходники сторонних лаунчеров. Интерфейс реализован собственным кодом; исходники и фирменные материалы Nitrolaunch не включены.

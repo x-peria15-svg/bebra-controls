@@ -1,11 +1,13 @@
-# Security
+# Безопасность
 
-Report vulnerabilities using this repository's **Security → Report a vulnerability** page. Do not put credentials, live tokens, server addresses, databases, screenshots of secrets, or exploit details against a live installation in public issues. If private reporting is unavailable, open an issue requesting a private contact without disclosing the vulnerability.
+Об уязвимостях сообщайте через **Security → Report a vulnerability** в репозитории. Не публикуйте ключи, пароли, адреса рабочих серверов, базы данных, снимки секретов или подробности эксплуатации действующей установки в открытых issues. Если закрытая отправка недоступна, запросите приватный контакт без описания уязвимости.
 
-The web service must run behind HTTPS, bound to loopback or a private reverse-proxy network. It only connects to the operator-configured HTTPS Pterodactyl origin. Never expose its raw HTTP development endpoint publicly. Keep the panel, Wings, Docker and this application updated.
+Размещайте веб-сервис за HTTPS с привязкой к loopback или закрытой сети обратного прокси. Он подключается только к HTTPS-адресу Pterodactyl, заданному администратором. Не открывайте внутренний HTTP-порт в интернет. Обновляйте панель, Wings, Docker и приложение.
 
-Browser credentials are retained in expiring, server-memory-only HTTP-only sessions; restarting the web service logs users out. Windows credentials use Electron safeStorage. Scoped credentials use dedicated non-administrator Pterodactyl service principals. They cannot create replacement keys or manage accounts. Revocation deletes their credentials and server memberships and requests active Wings sessions to disconnect. Expired grants are also cleaned up by the minute collector; a disconnected node may delay active socket termination. Operators should monitor collector and queue failures.
+В браузерной версии ключи хранятся только в памяти сервера до завершения сессии. Перезапуск сервиса завершает сессии. Windows использует Electron safeStorage. Ограниченные ключи привязаны к отдельным служебным учётным записям без прав администратора; они не могут управлять аккаунтом или создавать заменяющие ключи.
 
-Anyone granted files, backups, console commands or startup-image permissions can read application secrets or execute code inside that server. Do not treat those permissions as read-only. Never share an administrator's personal panel API key. The application does not provide network DDoS protection.
+Отзыв удаляет ключи и назначения на серверы и запрашивает отключение активных сессий Wings. Сборщик раз в минуту очищает просроченные назначения; API запрещает просроченный ключ сразу. Недоступная нода может задержать отключение уже открытого соединения. Следите за работой сборщика и очередей панели.
 
-Backend extensions modify an existing Pterodactyl installation. Back it up first. They target a Linux, single-node, MariaDB/MySQL panel with the traditional client-api middleware group. The installer stops on incompatible layouts. Panel upgrades may require reinstallation and compatibility testing. No independent security audit has been performed; 1.1 is a public beta.
+Разрешения на файлы, резервные копии, команды консоли и изменение запуска могут позволить читать секреты проекта или выполнять код внутри сервера. Выдавайте их осознанно. Не передавайте личный API-ключ администратора другим людям. Bebra Control не обеспечивает сетевую защиту от DDoS.
+
+Расширение изменяет установленную панель: сначала сделайте резервную копию. Поддерживаемая конфигурация — Linux, одна локальная нода, MariaDB/MySQL и традиционная группа middleware клиентского API. Установщик останавливается при несовместимой структуре. После обновлений могут понадобиться повторная установка и проверка совместимости. Независимый аудит не проводился; версия 1.1 — публичная бета.

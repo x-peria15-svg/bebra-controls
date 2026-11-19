@@ -1,5 +1,7 @@
-# Contributing
+# Участие в разработке
 
-Use Node.js 24 or newer. Run `npm ci`, `npm test` and `npm run check` before proposing a change. Keep the API allowlist, session/CSRF checks and server-side permission enforcement intact. Add tests for authorization changes and regressions. Use synthetic data and example.com documentation hosts, never production fixtures.
+Используйте Node.js 24 или новее. Перед отправкой изменений выполните `npm ci`, `npm test` и `npm run check`.
 
-Open a focused pull request describing the problem, resulting behavior and relevant validation. Do not upload node_modules, builds, user connection stores, credentials, logs or databases. New third-party code requires compatible licensing and attribution.
+Сохраняйте ограничения разрешённых API-запросов, проверки сессий и CSRF, а также проверку прав на сервере. Для изменений авторизации и исправления ошибок добавляйте подходящие тесты. Используйте вымышленные данные и адреса example.com без настроек рабочих серверов.
+
+В pull request опишите проблему, новое поведение и результаты проверки. Не добавляйте node_modules, сборки, сохранённые подключения, ключи, пароли, журналы или базы данных. При использовании чужого кода проверьте совместимость лицензии и сохраните указание авторства.

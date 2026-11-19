@@ -1,94 +1,99 @@
 # Bebra Control
 
-**A Windows desktop app and self-hosted browser dashboard for Pterodactyl servers.** Manage Minecraft servers, bots and websites in one dark interface, with server-side permissions and scoped access credentials.
+**Приложение для Windows и веб-панель для управления серверами Pterodactyl.** Minecraft, боты и сайты в одном тёмном интерфейсе: консоль, файлы, графики и доступ с ограниченными правами.
 
-> Public beta. **Pterodactyl and Wings must already be installed.** This project does not turn an empty VPS into a hosting panel by itself. It is not affiliated with Pterodactyl, Minecraft, Microsoft, PaperMC or Nitrolaunch.
+> Публичная бета. **Pterodactyl и Wings нужно установить заранее.** Автоматическая настройка пустого VPS не предусмотрена. Проект не связан с Pterodactyl, Minecraft, Microsoft, PaperMC или Nitrolaunch.
 
-## Features
+## Возможности
 
-- Console, start/stop/restart and live resource statistics.
-- CPU, RAM, disk and player-count graphs for the last hour, day and week.
-- File editor, streamed uploads with progress and drag-and-drop, plugin files, backups and schedules.
-- Resource budgets, system reserve and creation of separate project environments.
-- Per-server people/permissions management.
-- Scoped, expiring access keys with selected servers and permissions; one-time display and revocation.
-- The same interface in a browser and in the Windows application.
+- Запуск, остановка, перезапуск и консоль серверов.
+- Графики CPU, RAM, диска и онлайна за час, сутки и неделю.
+- Редактор файлов, потоковая загрузка с прогрессом и перетаскиванием из папки.
+- Плагины, резервные копии и расписания.
+- Настройка ресурсов серверов и резерва памяти для системы.
+- Создание окружений для Minecraft, ботов, сайтов и совместимых Docker-образов.
+- Управление пользователями и правами на отдельные серверы.
+- Ключи доступа с выбором серверов, разрешений и срока действия, показом один раз и отзывом.
+- Общий интерфейс в Windows и браузере.
 
-Core console/file/backups features use the standard client API. **History, scoped keys, resource budgets and environment creation require the included panel extension.** Unsupported optional features fail closed; no administrator Application API key is embedded in the client.
+Консоль, файлы и резервные копии используют стандартный клиентский API. **Графики, ограниченные ключи, управление ресурсами и создание окружений требуют расширения панели из репозитория.** Администраторский ключ Application API в клиент не встроен.
 
-## Windows
+## Скачать для Windows
 
-Download the Windows x64 ZIP from **Releases**, extract the **whole folder** and launch `Bebra Control.exe`. The app is not code-signed. Do not run it as administrator.
+Откройте **[Релизы](https://github.com/x-peria15-svg/bebra-controls/releases)**, скачайте архив Windows x64, распакуйте **всю папку** и запустите `Bebra Control.exe`. Приложение не подписано цифровой подписью. Запуск от имени администратора не нужен.
 
-Connect with your HTTPS Pterodactyl origin and a client key beginning with `ptlc_`. Existing panel users can use their own client keys. An operator can also issue a scoped Bebra key: the recipient does not manually create a panel account. The extension automatically creates a dedicated non-admin service principal behind the scenes.
+Введите HTTPS-адрес своей панели Pterodactyl и клиентский API-ключ, начинающийся с `ptlc_`. Пользователи панели могут использовать свои ключи. Администратор также может выдать ограниченный ключ Bebra: получателю не нужно вручную создавать аккаунт — расширение создаст отдельную служебную учётную запись без прав администратора.
 
-Your connection is stored only on your computer using Electron safeStorage. No connection profile, password or API key is shipped in the ZIP or repository. Scoped credentials do not grant VPS administration or the ability to create more credentials.
+В Windows подключение хранится локально с шифрованием Electron safeStorage. Пароли, ключи и настройки чужого VPS в архив и репозиторий не входят. Ограниченный ключ не позволяет администрировать VPS или создавать новые ключи.
 
-## Browser deployment
+## Установка веб-версии
 
-Requirements: an existing HTTPS Pterodactyl installation, Docker Compose and a domain/certificate you control. The web service only connects to the `PANEL_URL` configured by its operator.
+Понадобятся готовая панель Pterodactyl с HTTPS, Docker Compose и домен с сертификатом. Веб-сервис подключается только к адресу панели, заданному в `PANEL_URL`.
 
 ```sh
 git clone https://github.com/x-peria15-svg/bebra-controls.git
 cd bebra-controls
 cp deploy/.env.example deploy/.env
-# Edit PANEL_URL and PUBLIC_URL. Never commit this file.
+# Укажите PANEL_URL и PUBLIC_URL. Не добавляйте deploy/.env в Git.
 docker compose -f deploy/compose.yaml up -d --build
 ```
 
-The container listens on **127.0.0.1:3100** on the host. Add the contents of `deploy/nginx-location.conf` inside your existing HTTPS virtual host, verify with `nginx -t`, then reload nginx. The example serves the app at `/bebra/`. Set `PUBLIC_URL` to that exact external URL. Do not expose the raw HTTP port publicly.
+Контейнер слушает **127.0.0.1:3100**. Добавьте содержимое `deploy/nginx-location.conf` в существующий HTTPS-блок nginx, проверьте конфигурацию командой `nginx -t` и перезагрузите nginx. Пример использует путь `/bebra/`; `PUBLIC_URL` должен точно соответствовать внешнему адресу. Не открывайте внутренний HTTP-порт в интернет.
 
-Sign in using a client API key or scoped key. The browser receives an HttpOnly, Secure, SameSite session cookie; upstream credentials stay in server memory, not localStorage. Sessions expire after 12 hours and are lost when the web service restarts. No cross-origin panel proxy is provided. Use a separate instance for each configured panel.
+Вход — по клиентскому или ограниченному API-ключу. Браузер получает защищённую cookie с флагами HttpOnly, Secure и SameSite; ключ остаётся в памяти веб-сервиса и не записывается в localStorage. Сессия действует 12 часов и завершается при перезапуске сервиса. Для каждой панели нужен отдельный экземпляр веб-сервиса.
 
-See [deployment details](docs/DEPLOYMENT.md) and [security notes](SECURITY.md).
+Подробности: [развёртывание](docs/DEPLOYMENT.md), [безопасность](SECURITY.md).
 
-## Optional panel extension
+## Расширение Pterodactyl
 
-**Back up your panel database and files first.** Initial support targets Linux, MariaDB/MySQL, a single local node, and the traditional `app/Http/Kernel.php` Pterodactyl layout. The installer checks the middleware layout, creates Bebra tables and copies its routes/middleware with timestamped backups. Test compatibility again after a panel upgrade.
+**Сначала сохраните резервную копию файлов и базы данных панели.** Поддерживаемая конфигурация: Linux, MariaDB/MySQL, одна локальная нода и традиционная структура с `app/Http/Kernel.php`. Установщик проверяет структуру, создаёт таблицы Bebra и сохраняет датированные копии изменяемых файлов. После обновления панели совместимость нужно проверить заново.
 
 ```sh
 sudo bash deploy/install-panel.sh /var/www/pterodactyl
-# Optional Node.js/Python project runtime:
+# Необязательно: образ для проектов Node.js и Python.
 docker build -t bebra/apps:1.1.0 deploy/runtime
 ```
 
-The collector runs once per minute and retains 14 days of samples. Graphs **start accumulating after installation**; the app does not invent historical data. Player counts are queried for supported Java Minecraft environments. Other environments show no player data.
+Сборщик записывает показатели раз в минуту и хранит их 14 дней. **История накапливается после установки**: прошлые значения не выдумываются. Онлайн доступен для поддерживаемых серверов Minecraft Java.
 
-The operator issues scoped keys in **Overview → Access keys**: choose servers, permissions and lifetime. Keys are shown once; only metadata is listed afterward. Revocation removes all principal credentials and server memberships and requests active Wings consoles/SFTP sessions to disconnect. Expired grants are also cleaned up by the collector.
+Выдача ключей: **«Обзор VPS» → «Ключи доступа»**. Выберите серверы, права и срок действия. Полный ключ показывается один раз. Отзыв удаляет ключи и назначения служебной учётной записи и запрашивает отключение активных консолей и SFTP в Wings. Просроченные назначения очищает сборщик.
 
-Environment templates use locally installed eggs, not fixed egg IDs. Public/internal allocation addresses can be configured using `BEBRA_PUBLIC_IP` and `BEBRA_INTERNAL_IP` in the panel environment. Creating an allocation **does not bypass your firewall**. New public ports must be explicitly permitted by your network policy. Uploaded JARs/binaries and custom Docker images remain the operator's responsibility; custom images must follow Pterodactyl startup conventions. This is not a core/plugin marketplace.
+Шаблоны используют установленные eggs без фиксированных идентификаторов. Адреса выделений задаются через `BEBRA_PUBLIC_IP` и `BEBRA_INTERNAL_IP` в окружении панели. Создание выделения **не открывает порт в межсетевом экране**. За загружаемые JAR, исполняемые файлы и Docker-образы отвечает пользователь. Образы должны поддерживать правила запуска Pterodactyl.
 
-## Build from source
+## Сборка из исходников
 
-Node.js **24+** is required. npm is included with a normal Node.js installation.
+Нужен Node.js **24 или новее** с npm.
 
 ```sh
 npm ci
 npm test
 npm run check
-npm start          # desktop development
-npm run package   # Windows x64 directory under dist/
+npm start          # запуск приложения для разработки
+npm run package   # сборка Windows x64 в dist/
 ```
 
-To develop the browser service locally:
+Запуск веб-сервиса:
 
 ```sh
-# Production requires HTTPS. HTTP is allowed only for explicit loopback test fixtures.
+# Для рабочего размещения обязателен HTTPS.
+# HTTP разрешён только для явно заданных локальных тестов.
 PANEL_URL=https://panel.example.com PUBLIC_URL=https://control.example.com/bebra/ npm run web
 ```
 
-The Windows app uses Electron; the browser gateway uses Node's HTTP/stream APIs and `ws`. The panel extension uses existing Pterodactyl/Laravel services. See [API/architecture](docs/API.md).
+Windows-приложение использует Electron; веб-сервис — Node.js и `ws`; расширение — службы Pterodactyl/Laravel. См. [API и архитектуру](docs/API.md).
 
-## Limits and status
+## Ограничения
 
-- Pterodactyl is required; automatic empty-VPS provisioning is not included.
-- The backend extension is a beta compatibility layer, not a replacement for panel updates or security review.
-- Large files are streamed, but disk quotas, free space, upstream node limits and network interruptions still apply. Interrupted uploads are not resumable.
-- Node/Python templates expect an uploaded project. Pumpkin/Java templates require compatible binaries/JARs; game EULAs and third-party licenses remain applicable.
-- Resource edits require the selected server to be stopped. CPU is a quota, not a dedicated physical core. System reserve is a budget, not a Linux memory cgroup limit.
-- Custom Docker images do not gain privileged mode, host mounts or Docker-socket access from this UI.
-- No DDoS immunity, paid-service bypass or guaranteed ad blocking is provided.
+- Требуется установленный Pterodactyl.
+- Расширение находится в бета-версии. Независимый аудит безопасности не проводился.
+- Загрузка файлов ограничена квотой диска, свободным местом, настройками Wings и сетью. Докачка после обрыва не поддерживается.
+- Для Node.js/Python нужно загрузить проект, для Pumpkin/Java — совместимое ядро. Лицензии и EULA стороннего ПО продолжают действовать.
+- Изменение ресурсов требует остановки окружения. CPU задаётся квотой, а не выделенным физическим ядром. Резерв системы — бюджет, а не жёсткий лимит памяти Linux.
+- Пользовательские образы не получают привилегированный режим, доступ к файловой системе хоста или сокету Docker через интерфейс.
+- Приложение не обеспечивает сетевую защиту от DDoS.
 
-## Contributing and license
+## Участие и лицензия
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+[Предложить изменения](CONTRIBUTING.md) · [Сообщить об уязвимости](SECURITY.md) · [Сторонние компоненты](THIRD_PARTY_NOTICES.md).
+
+Код распространяется по лицензии [Apache-2.0](LICENSE). Юридический текст сохранён в оригинале; зависимости используют собственные лицензии.

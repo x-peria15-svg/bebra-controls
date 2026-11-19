@@ -1,45 +1,51 @@
-# Deployment
+# Развёртывание
 
-## Prerequisites and order
+## Порядок установки
 
-1. Install/configure Pterodactyl and Wings separately, with HTTPS and a working client API.
-2. Clone this repository. For only standard console/files functionality, connect the Windows app immediately.
-3. For graphs, scoped keys and resource management, back up the panel, install the extension and enable the collector.
-4. Build/run the web container behind your existing HTTPS nginx virtual host.
-5. Sign in with an existing client key. Administrators can then issue limited keys to recipients.
+1. Отдельно установите Pterodactyl и Wings, настройте HTTPS и клиентский API.
+2. Склонируйте репозиторий. Для стандартных функций консоли и файлов приложение Windows можно подключить сразу.
+3. Для графиков, ограниченных ключей и ресурсов сохраните резервную копию панели, установите расширение и включите сборщик.
+4. Соберите веб-контейнер и разместите его за существующим HTTPS-сервером nginx.
+5. Войдите по клиентскому ключу. Администратор сможет выдавать ограниченные ключи другим пользователям.
 
-The extension's installer makes timestamped backups of changed route/kernel files. Database additions are `bebra_resource_samples` and `bebra_access_keys`. Middleware `BebraKeyGuard` applies to the panel client API and blocks service principals from account administration or replacement-key issuance. Expired keys are denied immediately on API calls; collector cleanup also requests active sockets to disconnect.
+Установщик сохраняет датированные копии изменяемых файлов маршрутов и Kernel. В базе создаются таблицы `bebra_resource_samples` и `bebra_access_keys`. Middleware `BebraKeyGuard` ограничивает служебным аккаунтам доступ к управлению аккаунтом и выпуску заменяющих ключей. Просроченный ключ запрещается сразу; сборщик также запрашивает отключение активных соединений.
 
-## Extension compatibility
+## Совместимость расширения
 
-Tested with PHP 8.3 and a traditional Pterodactyl `app/Http/Kernel.php` installation on Ubuntu 24.04, MariaDB and a single local node. Other layouts require review. The installer does not install the panel, reconfigure SSH/firewall, modify game worlds, accept game EULAs, or start created environments automatically.
+Проверено с PHP 8.3, традиционной структурой Pterodactyl с `app/Http/Kernel.php`, Ubuntu 24.04, MariaDB и одной локальной нодой. Другие конфигурации требуют проверки. Установщик не устанавливает панель, не меняет SSH или межсетевой экран, не изменяет игровые миры, не принимает EULA и не запускает созданные окружения автоматически.
 
-After upgrading the panel, check route/middleware compatibility and reinstall the extension. Review timestamped backups before restoring files; do not overwrite newer panel code blindly. To disable, remove the Bebra route include and middleware entry after revoking all issued service keys, disable `bebra-history.timer`, and keep data tables until retention needs are understood. Removing only the middleware while service principals remain would weaken credential restrictions.
+После обновления панели проверьте маршруты и middleware и переустановите расширение. Перед восстановлением сравните резервные копии с текущими файлами, чтобы не затереть новый код панели.
 
-## Web environment
+Для отключения сначала отзовите все выданные служебные ключи, затем удалите подключение маршрутов Bebra и запись middleware, отключите `bebra-history.timer`. Таблицы сохраняйте до решения о сроках хранения. Удаление только middleware при действующих служебных аккаунтах ослабляет ограничения доступа.
 
-`deploy/.env` contains only instance settings, not user credentials:
+## Настройки веб-версии
+
+Файл `deploy/.env` содержит настройки экземпляра, а не пользовательские ключи:
 
 ```dotenv
 PANEL_URL=https://panel.example.com
 PUBLIC_URL=https://control.example.com/bebra/
 ```
 
-The nginx example assumes the `/bebra/` path. If a dedicated hostname serves the app at `/`, adjust the nginx location and `PUBLIC_URL` together. Only the configured panel origin is accepted. HTTPS is mandatory in production; use explicit loopback HTTP only inside automated tests.
+Пример nginx рассчитан на путь `/bebra/`. Если используете отдельный домен с корневым путём `/`, согласованно измените location nginx и `PUBLIC_URL`. Допускается только заданный адрес панели. Для рабочего размещения обязателен HTTPS; HTTP на loopback разрешён только для явно заданных автоматических тестов.
 
-The web service is non-root, has a read-only root filesystem, dropped capabilities, a 512 MiB memory limit and no Docker socket or host filesystem mount. It does not need port 3100 exposed beyond loopback. Native client API credentials are stored only in session memory. Docker restart logs users out. Sessions have an absolute 12-hour lifetime; the application intentionally has no persistent “remember my root key” browser store.
+Веб-сервис работает без root, с файловой системой только для чтения, без дополнительных capabilities, с лимитом памяти 512 МиБ, без сокета Docker и подключений файловой системы хоста. Порт 3100 не нужно открывать за пределы loopback.
 
-Configure certificate renewal and your normal reverse-proxy request limits. Sign-in attempts are bounded and the service limits active sessions. This does not replace upstream anti-DDoS filtering. Use native panel backups and OS monitoring.
+Клиентские ключи хранятся только в памяти сессий. Перезапуск контейнера завершает вход пользователей. Максимальный срок сессии — 12 часов; постоянного хранения ключа в браузере нет.
 
-## Runtimes and files
+Настройте обновление сертификата и ограничения запросов обратного прокси. Число попыток входа и активных сессий ограничено. Это не заменяет защиту от DDoS у хостера. Используйте резервные копии панели и мониторинг ОС.
 
-`docker build -t bebra/apps:1.1.0 deploy/runtime` builds a local Pterodactyl-compatible Node.js/Python runtime. Existing compatible eggs take precedence. Minecraft Java uses an installed upload-JAR/Paper egg. Pumpkin requires a compatible uploaded Linux executable; binary libc/runtime requirements are the operator's responsibility.
+## Окружения и файлы
 
-Node.js projects use `index.js`, Python projects `main.py`; edit `start.sh` to install dependencies or change the launch command. Bind websites to `0.0.0.0` and use `PORT`. Uploads stream without whole-file buffering in Bebra, but panel/Wings limits and disk quotas remain in force. Use trusted release artifacts; no uploaded code is automatically considered safe.
+Команда `docker build -t bebra/apps:1.1.0 deploy/runtime` собирает совместимый с Pterodactyl образ Node.js/Python. Уже установленные совместимые eggs имеют приоритет. Minecraft Java использует установленный egg для загрузки JAR/Paper. Для Pumpkin нужен совместимый исполняемый файл Linux; требования к libc и среде проверяет администратор.
 
-Resource capacity is still enforced server-side. Reserve settings are budgets, not hard Linux limits. Memory/CPU/disk edits require a stopped environment. A selected public allocation does not modify firewall or upstream game-filter policy.
+Проекты Node.js запускаются через `index.js`, Python — через `main.py`. Для установки зависимостей или изменения запуска отредактируйте `start.sh`. Сайты должны слушать `0.0.0.0` и использовать `PORT`.
 
-## Monitoring
+Bebra передаёт файлы потоково без загрузки всего файла в память, но лимиты панели/Wings и квота диска сохраняются. Используйте доверенные сборки: загруженный код не становится безопасным автоматически.
+
+Ограничения ресурсов проверяются на сервере. Резерв системы — бюджет, а не жёсткий лимит Linux. Изменение памяти, CPU и диска требует остановки окружения. Публичное выделение порта не меняет межсетевой экран или правила защиты хостера.
+
+## Мониторинг
 
 ```sh
 docker compose -f deploy/compose.yaml logs --tail=50 web
@@ -47,4 +53,4 @@ systemctl status bebra-history.timer bebra-history.service
 journalctl -u bebra-history.service --since today
 ```
 
-History keeps 14 days. Hour/day/week views aggregate 1/5/30-minute buckets. Collection failures leave gaps, not fabricated zeroes. Some server types do not expose a Minecraft player count.
+История хранится 14 дней. Графики за час, сутки и неделю используют интервалы 1, 5 и 30 минут. Ошибки сбора оставляют пропуски, а не искусственные нули. Некоторые типы серверов не предоставляют онлайн Minecraft.

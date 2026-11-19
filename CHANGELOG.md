@@ -1,10 +1,10 @@
-# Changelog
+# История изменений
 
 ## 1.1.0-beta.1
 
-- Self-hosted browser gateway sharing the Windows interface.
-- CPU/RAM/disk/player history with hour/day/week views.
-- Scoped, expiring service keys with revocation and Wings disconnect.
-- Resource/system budgets, environment creation and native permission management.
-- Streamed file uploads and drag-and-drop.
-- Generic deployment configuration and first public source release, with privacy/secrets checks.
+- Веб-версия для собственного хостинга с интерфейсом приложения Windows.
+- Графики CPU, RAM, диска и онлайна за час, сутки и неделю.
+- Ключи доступа с ограниченными правами, сроком действия и отзывом с отключением Wings.
+- Управление ресурсами, резервом системы, окружениями и правами пользователей.
+- Потоковая загрузка файлов и перетаскивание из папки.
+- Настройки для самостоятельного развёртывания и первая публикация исходников с проверкой секретов и личных данных.

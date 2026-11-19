@@ -1,50 +1,54 @@
-# API and architecture
+# API и архитектура
 
-The Electron main process and web gateway both use `lib/panel-client.cjs`, which accepts an HTTPS origin and a client API credential. A method/path allowlist bounds all forwarded operations; renderer input cannot choose an arbitrary host or an Application API endpoint.
+Основной процесс Electron и веб-сервис используют `lib/panel-client.cjs`: HTTPS-адрес панели и клиентский ключ. Список разрешённых методов и путей ограничивает пересылаемые операции. Интерфейс не может выбрать произвольный хост или вызвать Application API.
 
-## Browser boundary
+## Граница браузера
 
-- `GET /api/config`: connection status and a per-session CSRF token; never the upstream credential.
-- `POST /api/connect`: operator-configured panel URL plus client credential. Exact Origin validation, bounded sign-in attempts and capacity. Creates a Secure/HttpOnly/SameSite cookie.
-- `POST /api/request`: bounded JSON containing allowlisted `PanelClient` options. Requires session, Origin and CSRF.
-- `POST /api/upload`: authenticated streaming multipart upload to a fresh signed Wings URL.
-- `GET /api/download`: authenticated streaming download from a validated signed panel/Wings origin.
-- WebSocket `/api/console`: same-origin session-bound bridge; Wings credentials remain server-side. Commands use permission-checked REST, not arbitrary client WebSocket forwarding.
-- `POST /api/disconnect`: destroys the session and its sockets.
+- `GET /api/config`: состояние подключения и CSRF-токен сессии; ключ панели не возвращается.
+- `POST /api/connect`: заданный администратором адрес панели и клиентский ключ. Проверяется точный Origin, ограничиваются попытки входа и число сессий. Создаётся cookie Secure/HttpOnly/SameSite.
+- `POST /api/request`: ограниченный JSON с разрешёнными параметрами PanelClient. Нужны сессия, Origin и CSRF.
+- `POST /api/upload`: авторизованная потоковая multipart-загрузка по свежей подписанной ссылке Wings.
+- `GET /api/download`: авторизованное потоковое скачивание с проверенного адреса панели/Wings.
+- WebSocket `/api/console`: соединение привязано к сессии и Origin; ключи Wings остаются на сервере. Команды идут через REST с проверкой прав.
+- `POST /api/disconnect`: удаление сессии и закрытие её соединений.
 
-All paths above are relative to the configured public base path (for example `/bebra`). The gateway is not a public multi-destination proxy.
+Пути отсчитываются от настроенного публичного пути, например `/bebra`. Сервис не предоставляет открытый прокси к произвольным панелям.
 
-## Optional authenticated panel routes
+## Дополнительные маршруты панели
 
-Under `/api/client/bebra`:
+Префикс: `/api/client/bebra`.
 
-| Route | Access | Purpose |
+| Маршрут | Доступ | Назначение |
 |---|---|---|
-| `GET /account` | Client | Resource-administrator capability |
-| `GET /host` | Root admin | Local host memory overview |
-| `GET/POST /system-reserve` | Root admin | Capacity budget |
-| `GET/POST /servers/{id}/limits` | Root admin | Stopped-server resource limits |
-| `GET /templates`, `POST /environments` | Root admin | Environment creation |
-| `GET /servers/{id}/history?range=1h` | Owner/admin/assigned subuser | Aggregated resource samples; also `24h`, `7d` |
-| `GET/POST /keys`, `DELETE /keys/{id}` | Root admin | Scoped service credentials |
+| `GET /account` | Клиент | Проверка возможности администрировать ресурсы |
+| `GET /host` | Главный администратор | Обзор памяти хоста |
+| `GET/POST /system-reserve` | Главный администратор | Бюджет системного резерва |
+| `GET/POST /servers/{id}/limits` | Главный администратор | Ресурсы остановленного сервера |
+| `GET /templates`, `POST /environments` | Главный администратор | Создание окружений |
+| `GET /servers/{id}/history?range=1h` | Владелец, администратор или назначенный пользователь | История; также поддерживаются `24h`, `7d` |
+| `GET/POST /keys`, `DELETE /keys/{id}` | Главный администратор | Ограниченные ключи |
 
-Native user/file/power/backup operations keep Pterodactyl's existing authorization. History additionally checks membership before returning any rows. Issued-key service principals are non-admin and are limited to their assigned subusers/permissions. Service principals cannot manage their own account or mint replacement API credentials. The server, not UI visibility, is the authorization boundary.
+Операции с пользователями, файлами, питанием и копиями сохраняют штатную авторизацию Pterodactyl. История дополнительно проверяет назначение пользователя до выдачи данных. Служебные аккаунты не являются администраторами и ограничены назначенными серверами и правами. Им запрещено управлять своим аккаунтом и создавать заменяющие ключи. Проверки выполняются на сервере независимо от видимости кнопок.
 
-## Scoped-key creation example
+## Пример создания ключа
 
-An authenticated root administrator submits:
+Авторизованный главный администратор отправляет:
 
 ```json
 {
-  "name": "Read-only helper",
+  "name": "Помощник: чтение",
   "servers": [1],
   "permissions": ["websocket.connect", "file.read"],
   "expires_days": 30
 }
 ```
 
-Server IDs are taken from the current panel, not hardcoded in the client. The full token is returned once. Never put real tokens into issues, examples, logs or screenshots. Revocation deletes every credential on the dedicated principal, removes memberships and calls Wings deauthorization; failed node contact is retried through the panel queue.
+Идентификаторы серверов берутся из текущей панели. Полный ключ возвращается один раз. Не помещайте настоящие ключи в issues, примеры, журналы или снимки экрана.
 
-## Storage
+Отзыв удаляет все ключи выделенного служебного аккаунта, назначения на серверы и вызывает отмену авторизации Wings. Если нода недоступна, запрос повторяется через очередь панели.
 
-Windows: encrypted local connection store. Browser: expiring sessions in memory. Panel: native encrypted API-key storage and Bebra metadata/resource tables. No telemetry endpoint, advertising integration, external script CDN or embedded host credential is included.
+## Хранение данных
+
+Windows: зашифрованное локальное подключение. Браузер: временные сессии в памяти сервера. Панель: штатное зашифрованное хранилище ключей и таблицы Bebra для метаданных и показателей.
+
+В приложение не включены телеметрия, рекламные интеграции, внешние CDN скриптов или встроенные ключи хостинга.
