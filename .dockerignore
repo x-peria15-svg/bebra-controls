@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+.package-stage-*
+deploy/.env
+*.log
+*.db
+*.sqlite*
+private

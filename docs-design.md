@@ -1,0 +1,7 @@
+# Bebra Control 1.1 design
+
+Deliver browser version first, then Windows packaging and public GitHub release. Pterodactyl remains required. Browser and desktop share the existing UI and bounded client API adapter. Web service connects only to its operator-configured HTTPS panel; upstream credentials remain in expiring HTTP-only sessions, never localStorage. HTTPS, same-origin checks, CSRF protection, bounded sessions, login throttling and a WebSocket bridge are required. Uploads/downloads stream through the service.
+
+Optional Pterodactyl extension supplies minute-resolution CPU/RAM/disk/player samples with 1h/24h/7d aggregated queries. No historical data is fabricated. A timer expires old samples and access grants. Root administrators can issue limited, expiring API credentials using dedicated non-admin service principals and chosen server permissions. Recipients do not manually create panel accounts; service principals cannot manage their account or create replacement keys. Revocation removes all principal credentials and invalidates Wings sessions.
+
+Public tree contains only Bebra code, generic examples, tests, build/deploy scripts and license notices. No VPS addresses, credentials, bot/plugin code, real fixtures, logs or private history. Advanced routes use installation-specific configuration rather than fixed egg/node/IP identifiers. Fresh repository, Apache-2.0, README, SECURITY, CONTRIBUTING, dependency locks, CI and downloadable releases.

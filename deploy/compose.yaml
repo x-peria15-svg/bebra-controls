@@ -1,0 +1,22 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3100:3100"
+    mem_limit: 512m
+    pids_limit: 128
+    cpus: 1
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"

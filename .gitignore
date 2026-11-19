@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+dist/
+.package-stage-*/
+.env
+deploy/.env
+*.log
+*.db
+*.sqlite*
+*.pem
+*.key
+connection.json
+coverage/
+test-results/
+playwright-report/
+*.before-bebra-*
+private/
