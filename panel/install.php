@@ -7,12 +7,13 @@ use Illuminate\Database\Schema\Blueprint;
 if(!Schema::hasTable('bebra_resource_samples'))Schema::create('bebra_resource_samples',function(Blueprint $t){$t->bigIncrements('id');$t->unsignedInteger('server_id');$t->unsignedBigInteger('sampled_at');$t->double('cpu_percent');$t->unsignedBigInteger('memory_bytes');$t->unsignedBigInteger('disk_bytes');$t->unsignedInteger('players')->nullable();$t->unique(['server_id','sampled_at']);$t->foreign('server_id')->references('id')->on('servers')->onDelete('cascade');});
 if(!Schema::hasTable('bebra_access_keys'))Schema::create('bebra_access_keys',function(Blueprint $t){$t->bigIncrements('id');$t->unsignedInteger('created_by');$t->unsignedInteger('user_id')->unique();$t->unsignedInteger('api_key_id');$t->string('name',80);$t->string('prefix',32);$t->text('server_ids');$t->text('permissions');$t->timestamp('expires_at')->nullable();$t->timestamp('revoked_at')->nullable();$t->timestamp('created_at');});
 $stamp=date('Ymd-His');
-foreach(['bebra.php','bebra-management.php','bebra-system.php','bebra-creation.php','bebra-history.php','bebra-keys.php'] as $file){$target=$root.'/routes/'.$file;if(is_file($target))copy($target,$target.'.before-bebra-'.$stamp);copy(__DIR__.'/'.$file,$target);chmod($target,0644);}
+foreach(['bebra.php','bebra-management.php','bebra-system.php','bebra-creation.php','bebra-history.php','bebra-keys.php','bebra-ops.php'] as $file){$target=$root.'/routes/'.$file;if(is_file($target))copy($target,$target.'.before-bebra-'.$stamp);copy(__DIR__.'/'.$file,$target);chmod($target,0644);}
 if(!is_dir($root.'/bebra'))mkdir($root.'/bebra',0755);copy(__DIR__.'/collect.php',$root.'/bebra/collect.php');
 copy(__DIR__.'/BebraKeyGuard.php',$root.'/app/Http/Middleware/BebraKeyGuard.php');
 if(!is_dir($root.'/app/Services/Bebra'))mkdir($root.'/app/Services/Bebra',0755);
 copy(__DIR__.'/AccessKeyService.php',$root.'/app/Services/Bebra/AccessKeyService.php');
 copy(__DIR__.'/TemplateRegistry.php',$root.'/app/Services/Bebra/TemplateRegistry.php');
+copy(__DIR__.'/OpsService.php',$root.'/app/Services/Bebra/OpsService.php');
 if(!is_file($root.'/config/bebra.php'))copy(__DIR__.'/config.php',$root.'/config/bebra.php');
 $nest=\Pterodactyl\Models\Nest::firstOrFail();
 foreach([

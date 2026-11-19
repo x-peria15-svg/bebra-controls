@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+test('empty INFO records are hidden while meaningful messages and errors remain',async()=>{const {appendLog}=await import('../ui/logs.mjs');const logs=new Map();const added=appendLog(logs,'example','22:42:09  INFO \n22:42:10 INFO Saving chunks\n22:42:11 ERROR\n[22:42:12 INFO]:\n');assert.deepEqual(added.map(x=>x.text),['22:42:10 INFO Saving chunks','22:42:11 ERROR']);});

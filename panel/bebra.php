@@ -9,3 +9,4 @@ require __DIR__ . '/bebra-creation.php';
 require __DIR__ . '/bebra-system.php';
 require __DIR__ . '/bebra-history.php';
 require __DIR__ . '/bebra-keys.php';
+require __DIR__ . '/bebra-ops.php';

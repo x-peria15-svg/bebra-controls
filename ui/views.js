@@ -1,10 +1,12 @@
 import {h,btn,ibtn,bytes,date,empty,toast,run,confirm,promptFields,field,serverName,runtime,isPumpkin,isApps,stateName} from './util.js';
 import {icon} from './icons.js';
+import {configEditor,validateConfig} from './config-editor.js';
+import {transferDialog} from './workspace.js';
 function section(title,subtitle,actions=[]){const body=h('div',{class:'section-body'});return {root:h('section',{class:'section-panel'},h('div',{class:'section-heading'},h('div',{},h('h2',{},title),h('p',{},subtitle)),h('div',{class:'section-actions'},actions)),body),body};}
 function loading(body){body.replaceChildren(h('div',{class:'initial-loading'},h('span',{class:'spinner'}),'Загрузка…'));}
 function errorView(body,e){body.replaceChildren(empty('Не удалось загрузить',e.message,'info'));}
 export function filesView(ctx,plugins=false){
- let directory=plugins?'/plugins':'/',disposed=false,dirty=false,currentFile=null,loadGeneration=0;
+ let directory=plugins?'/plugins':'/',disposed=false,dirty=false,currentFile=null,loadGeneration=0,editor=null;
  const view=section(plugins?'Плагины':'Файлы сервера',plugins?(isPumpkin(ctx.state.selected)?'Нативные плагины Pumpkin — .wasm. JAR требуют настроенного PatchBukkit.':'Загружай свои плагины и редактируй их настройки.'):'Загружай ядра, конфигурации и миры.',[
   btn('Новая папка','plus',()=>run(async()=>{const data=await promptFields('Новая папка',[{name:'name',label:'Название папки',placeholder:'Например, plugins'}],'Создать');if(!data)return;await ctx.api('/files/create-folder','POST',{root:directory,name:data.name});await load(directory);})),
   btn('Загрузить','upload',()=>run(async()=>{const r=await window.bebra.upload({server:ctx.server,directory,plugins});if(!r.canceled){toast('Загружено файлов: '+r.files.length);await load(directory);}}),'primary'),
@@ -18,16 +20,17 @@ export function filesView(ctx,plugins=false){
   const generation=++loadGeneration,name=join(sourceDirectory,file.name);loading(view.body);
   try{const text=await ctx.api('/files/contents','GET',undefined,{file:name});if(disposed||generation!==loadGeneration)return;
    currentFile=name;dirty=false;
-   const area=h('textarea',{class:'editor',spellcheck:'false',value:text,'aria-label':'Редактор '+file.name,onInput:()=>{dirty=true;mark.textContent='Не сохранено';}});
-   area.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const p=area.selectionStart;area.setRangeText('  ',p,area.selectionEnd,'end');dirty=true;mark.textContent='Не сохранено';}if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save.click();}});
+   editor?.destroy();const area=h('div',{class:'config-editor','aria-label':'Редактор '+file.name});
+   editor=configEditor(area,file.name,text,()=>{dirty=true;mark.textContent='Не сохранено';});
+   area.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save.click();}});
    const mark=h('span',{class:'subtle'},'Все изменения сохранены');
-   const save=btn('Сохранить','save',()=>run(async()=>{save.disabled=true;const snapshot=area.value;try{await ctx.api('/files/write','POST',snapshot,{file:name});dirty=area.value!==snapshot;mark.textContent=dirty?'Есть новые несохранённые изменения':'Все изменения сохранены';toast(dirty?'Предыдущая версия сохранена. Новые изменения ещё не сохранены.':'Файл сохранён');}finally{save.disabled=false;}}),'primary');
+   const save=btn('Сохранить','save',()=>run(async()=>{const snapshot=editor.value,validation=validateConfig(file.name,snapshot);if(validation.supported&&!validation.valid){mark.textContent='Ошибка синтаксиса: '+validation.error;toast('Исправь синтаксис перед сохранением.','error');return;}save.disabled=true;try{await ctx.api('/files/write','POST',snapshot,{file:name});dirty=editor.value!==snapshot;mark.textContent=dirty?'Есть новые несохранённые изменения':'Все изменения сохранены';toast('Файл сохранён');}finally{save.disabled=false;}}),'primary');
    view.body.replaceChildren(h('div',{class:'file-editor'},h('div',{class:'editor-heading'},ibtn('К списку файлов','back',()=>run(()=>load(directory))),h('strong',{},file.name),mark,save),area));
   }catch(e){if(!disposed&&generation===loadGeneration)errorView(view.body,e);}
  }
  function join(root,name){return (root==='/'?'':root)+'/'+name;}
  async function load(next){
-  if(!await safeLeave())return;const generation=++loadGeneration;dirty=false;currentFile=null;directory=next;const sourceDirectory=next;
+  if(!await safeLeave())return;editor?.destroy();editor=null;const generation=++loadGeneration;dirty=false;currentFile=null;directory=next;const sourceDirectory=next;
   breadcrumb.replaceChildren(ibtn('Папка выше','back',()=>run(()=>load(directory.split('/').slice(0,-1).join('/')||'/'))),h('span',{},directory));
   loading(view.body);
   try{const result=await ctx.api('/files/list','GET',undefined,{directory:sourceDirectory});if(disposed||generation!==loadGeneration)return;
@@ -38,13 +41,14 @@ export function filesView(ctx,plugins=false){
    for(const f of list){
     const open=()=>run(()=>f.is_file?edit(f,sourceDirectory):load(join(sourceDirectory,f.name)));
     const actions=h('div',{class:'row-actions'},f.is_file?ibtn('Скачать '+f.name,'download',()=>run(()=>window.bebra.download({server:ctx.server,file:join(sourceDirectory,f.name)}))):null,ibtn('Переименовать '+f.name,'settings',()=>run(async()=>{const d=await promptFields('Переименовать',[{name:'name',label:'Новое имя',value:f.name}]);if(d){await ctx.api('/files/rename','PUT',{root:sourceDirectory,files:[{from:f.name,to:d.name}]});await load(sourceDirectory);}})),ibtn('Удалить '+f.name,'trash',()=>run(async()=>{if(await confirm('Удалить '+f.name+'?',f.is_file?'Файл будет удалён с VPS.':'Папка будет удалена вместе со всем содержимым.','Удалить',true)){await ctx.api('/files/delete','POST',{root:sourceDirectory,files:[f.name]});await load(sourceDirectory);}})));
+    if(f.is_file&&ctx.state.resourceAdmin)actions.prepend(ibtn('Скопировать или перенести '+f.name,'folder',()=>run(()=>transferDialog(ctx.state,{kind:'server',server:ctx.server,path:join(sourceDirectory,f.name)},()=>load(sourceDirectory)))));
     tbody.append(h('tr',{},h('td',{},h('button',{class:'file-name',onClick:open},icon(f.is_file?'file':'folder',18),f.name)),h('td',{},f.is_file?bytes(f.size):'Папка'),h('td',{},date(f.modified_at)),h('td',{},actions)));
    }table.append(tbody);view.body.replaceChildren(table);
   }catch(e){if(disposed||generation!==loadGeneration)return;if(plugins&&e.message.includes('не найден'))view.body.replaceChildren(empty('Папка plugins ещё не создана','Создай папку, затем загрузи плагины.','puzzle'),btn('Создать папку plugins','plus',()=>run(async()=>{await ctx.api('/files/create-folder','POST',{root:'/',name:'plugins'});await load('/plugins');}),'primary'));else errorView(view.body,e);}
  }
  view.root.prepend(h('div',{class:'drop-hint'},'Перетащи файлы из Проводника сюда — они загрузятся в открытую папку. Размер ограничен квотой и свободным местом. Существующие файлы с теми же именами заменяются.'));
  async function dropFiles(files){if(!await safeLeave())return;const r=await window.bebra.uploadDropped({server:ctx.server,directory,plugins,files:Array.from(files)});toast('Загружено файлов: '+r.files.length);await load(directory);}
- load(directory);return {...view,dropFiles,canLeave:safeLeave,dispose(){disposed=true;}};
+ load(directory);return {...view,dropFiles,canLeave:safeLeave,dispose(){disposed=true;editor?.destroy();}};
 }
 export function backupsView(ctx){
  let disposed=false;

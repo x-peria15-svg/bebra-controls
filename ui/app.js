@@ -7,6 +7,7 @@ import {filesView,backupsView,schedulesView,propertiesView,playersView} from './
 import {resourcesView,accessView,creationView,allowed} from './management.js';
 import {systemReserveView} from './system-reserve.js';
 import {historyView,keysView} from './analytics.js';
+import {workspaceView} from './workspace.js';
 const $=s=>document.querySelector(s);
 const state={servers:[],selected:null,resources:new Map(),logs:new Map(),players:new Map(),host:null,tab:'console',overview:false,connected:false};
 let view=null,pollBusy=false,lastHost=0,refreshing=false;
@@ -44,6 +45,7 @@ async function canLeave(){return !view?.canLeave||await view.canLeave();}
 function renderView(){
  view?.dispose?.();view=null;
  if(state.overview==='keys'){view=keysView(state);$('#content').replaceChildren(view.root);return;}
+ if(['shared','domains'].includes(state.overview)){view=workspaceView(state,state.overview==='domains');$('#content').replaceChildren(view.root);return;}
  if(state.overview==='reserve'){view=systemReserveView(async()=>{lastHost=0;await overview();});$('#content').replaceChildren(view.root);return;}
  if(state.overview==='create'){view=creationView(async id=>{state.overview=false;const r=await window.bebra.api({});state.servers=r.data.map(x=>normalizeServer(x.attributes));await selectServer(state.servers.find(s=>s.identifier===id)||state.servers.at(-1));});$('#content').replaceChildren(view.root);return;}
  if(state.overview){renderOverview();return;}
@@ -61,6 +63,7 @@ function renderOverview(){
  const root=h('div',{class:'overview-content'},h('div',{class:'overview-intro'},h('div',{},h('h2',{},'Все серверы'),h('p',{},'Твоя сеть. Все окружения под рукой.')),h('span',{class:'tag'},state.servers.length+' окружений')));
  if(state.resourceAdmin)root.firstChild.append(btn('Создать окружение','plus',()=>run(newEnvironment),'primary'));
  if(state.resourceAdmin)root.firstChild.append(btn('Ключи доступа','shield',()=>run(accessKeys)));
+ if(state.resourceAdmin)for(const [mode,label,name]of [['shared','Общие файлы','folder'],['domains','Домены и HTTPS','network']])root.firstChild.append(btn(label,name,()=>run(async()=>{if(!await canLeave())return;state.overview=mode;renderView();})));
  const grid=h('div',{class:'server-grid'});
  for(const s of state.servers){const r=state.resources.get(s.identifier),v=r?.resources;
   const usage=(label,value,limit,format)=>{const bounded=Number(limit)>0;const percent=value==null||!bounded?0:Math.max(0,Math.min(100,value/limit*100));return h('div',{class:'card-usage'},h('div',{class:'card-usage-label'},h('span',{},label),h('strong',{},value==null?'—':format(value))),h('div',{class:'card-usage-track'},h('span',{style:'width:'+percent+'%'})),h('small',{},bounded?'из '+format(limit):'без лимита'));};

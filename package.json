@@ -1,7 +1,7 @@
 {
   "name": "bebra-control",
   "productName": "Bebra Control",
-  "version": "1.1.0-beta.1",
+  "version": "1.1.0-beta.2",
   "description": "Desktop and self-hosted web control for Pterodactyl servers",
   "main": "main.cjs",
   "author": "Bebra Control contributors",

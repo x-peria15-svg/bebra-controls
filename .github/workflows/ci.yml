@@ -20,4 +20,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run check
+      - name: Проверка файловых операций
+        if: runner.os == 'Linux'
+        run: python3 test/ops_test.py
       - run: npm audit --omit=dev --audit-level=high
